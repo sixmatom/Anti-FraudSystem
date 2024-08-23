@@ -26,9 +26,6 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final FraudLimitsRepository fraudLimitsRepository;
 
-    private Long maxAllowed;
-    private Long maxManualProcessing;
-
     @Autowired
     public TransactionService(UserRepository userRepository,
                               StolenCardRepository stolenCardRepository,
@@ -45,14 +42,12 @@ public class TransactionService {
 
     private void initializeLimits() {
         if (fraudLimitsRepository.count() == 0) {
-            FraudLimits limits = fraudLimitsRepository.findById(1L).orElseGet(() -> {
+            fraudLimitsRepository.findById(1L).orElseGet(() -> {
                 FraudLimits newLimits = new FraudLimits();
                 newLimits.setMaxAllowed(200L);
                 newLimits.setMaxManualProcessing(1500L);
                 return fraudLimitsRepository.save(newLimits);
             });
-            this.maxAllowed = limits.getMaxAllowed();
-            this.maxManualProcessing = limits.getMaxManualProcessing();
         }
     }
 
@@ -96,7 +91,7 @@ public class TransactionService {
         List<Transaction> recentTransactions = transactionRepository.findAllByNumberAndDateAfter(request.number(), oneHourAgo)
                 .stream()
                 .filter(transaction -> !transaction.getDate().isAfter(request.date()))
-                .collect(Collectors.toList());
+                .toList();
 
         long regionCount = recentTransactions.stream()
                 .map(Transaction::getRegion)
